@@ -3,22 +3,24 @@ import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
-// --- THE DEFINITIVE FIX ---
-// We are now using process.env, which is guaranteed to be available in Vercel's build environment.
+// Vite replaces `import.meta.env` with `process.env` during the build.
+// This is a robust way to handle it.
+const env = import.meta.env || process.env;
+
 const firebaseConfig = {
-  apiKey: process.env.VITE_FIREBASE_API_KEY,
-  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.VITE_FIREBASE_APP_ID
+  apiKey: env.VITE_FIREBASE_API_KEY,
+  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: env.VITE_FIREBASE_APP_ID
 };
 
-// --- Diagnostic Logging ---
-// This will print to the BROWSER console what keys the live app is seeing.
-console.log("Firebase API Key Loaded:", firebaseConfig.apiKey ? "Exists" : "MISSING");
+// Diagnostic log to be absolutely sure.
+if (!firebaseConfig.apiKey) {
+  console.error("Firebase API Key is MISSING. Check Vercel environment variables.");
+}
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
