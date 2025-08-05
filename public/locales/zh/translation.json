@@ -1,0 +1,25 @@
+{
+  "nav": {
+    "home": "首页",
+    "services": "服务",
+    "about": "关于我们",
+    "contact": "联系我们"
+  },
+  "hero": {
+    "title": "用人工智能与数据改变未来",
+    "subtitle": "Lifewood 构建支持全球影响力的智能系统",
+    "cta": "探索我们的服务"
+  },
+  "assistant": {
+    "floating_button": "咨询 Lifewood",
+    "greeting": "您好！我是 Lifewood 人工智能助手。今天有什么可以帮您？",
+    "quick_reply_services": "探索服务",
+    "quick_reply_contact": "如何联系？",
+    "quick_reply_about": "Lifewood 是做什么的？"
+  },
+  "home_about_preview": {
+    "title": "我们是谁",
+    "description": "我们是一家领先的人工智能创新公司，专注于高质量数据标注和智能自动化，帮助企业自信地扩展业务。",
+    "cta": "了解更多"
+  }
+}

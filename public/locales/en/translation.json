@@ -1,0 +1,25 @@
+{
+  "nav": {
+    "home": "Home",
+    "services": "Services",
+    "about": "About Us",
+    "contact": "Contact"
+  },
+  "hero": {
+    "title": "Transforming the Future with AI & Data",
+    "subtitle": "Lifewood builds smart systems that power global impact",
+    "cta": "Explore Our Services"
+  },
+  "assistant": {
+    "floating_button": "Ask Lifewood",
+    "greeting": "Hello! I'm the Lifewood AI Assistant. How can I help you today?",
+    "quick_reply_services": "Explore Services",
+    "quick_reply_contact": "How to Contact?",
+    "quick_reply_about": "What does Lifewood do?"
+  },
+  "home_about_preview": {
+    "title": "Who We Are",
+    "description": "We are a premier AI-powered innovation company, specializing in high-quality data annotation and intelligent automation to help businesses scale confidently.",
+    "cta": "Learn More"
+  }
+}
