@@ -1,5 +1,5 @@
 {
-  "name": "react-lifewood",
+   "name": "react-lifewood",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "postinstall": "cd backend && npm install"
+    "vercel-build": "npm run build"
   },
   "dependencies": {
     "@tippyjs/react": "^4.2.6",
