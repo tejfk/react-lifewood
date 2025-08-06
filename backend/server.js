@@ -28,20 +28,26 @@ const app = express();
 // --- Production-Ready and Dynamic CORS Configuration ---
 const allowedOrigins = [
   'http://localhost:5173', // Your local dev environment
-  'https://react-lifewood.vercel.app' // IMPORTANT: This should be your main production URL
+  'https://react-lifewood.vercel.app' // IMPORTANT: This MUST match your main Vercel production URL
 ];
 
-// When deployed on Vercel, VERCEL_URL is available for preview deployments.
+// When deployed on Vercel, VERCEL_URL is automatically available for preview deployments.
 if (process.env.VERCEL_URL) {
   allowedOrigins.push(`https://${process.env.VERCEL_URL}`);
 }
+// This is a common structure for preview URLs, adding it provides extra robustness.
+if (process.env.VERCEL_BRANCH_URL) {
+    allowedOrigins.push(`https://${process.env.VERCEL_BRANCH_URL}`);
+}
+
 
 const corsOptions = {
   origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or server-to-server) or from our list
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.error(`CORS Error: Origin ${origin} not allowed.`);
+      console.error(`CORS Error: Origin ${origin} not allowed. Allowed origins are:`, allowedOrigins);
       callback(new Error('Not allowed by CORS'));
     }
   }
@@ -118,7 +124,7 @@ app.patch('/api/applicants/:id/status', authenticateToken, async (req, res) => {
             await db.collection('activityLogs').add({ action: logAction, applicantName: applicantDataForLog.name, timestamp: admin.firestore.FieldValue.serverTimestamp(), performedBy: adminEmail });
         }
 
-        // 4. Send Email to Applicant
+        // 4. Send Email to Applicant (WITH FULL TEMPLATES)
         if (status === 'approved') {
             await sendEmail({
                 to: applicantData.email,
