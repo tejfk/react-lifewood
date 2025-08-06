@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { FiMail, FiPhone, FiMapPin, FiSend } from 'react-icons/fi';
-import HumanCtaSection from '../components/HumanCtaSection';
+
 
 const Contact = () => {
     const [formData, setFormData] = useState({
