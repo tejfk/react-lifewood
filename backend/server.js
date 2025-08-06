@@ -28,18 +28,16 @@ const app = express();
 // --- Production-Ready and Dynamic CORS Configuration ---
 const allowedOrigins = [
   'http://localhost:5173', // Your local dev environment
-  'https://react-lifewood.vercel.app' // IMPORTANT: REPLACE with your main Vercel production URL
+  'https://react-lifewood.vercel.app' // IMPORTANT: This should be your main production URL
 ];
 
-// When deployed on Vercel, the VERCEL_URL variable is automatically available for preview deployments.
+// When deployed on Vercel, VERCEL_URL is available for preview deployments.
 if (process.env.VERCEL_URL) {
   allowedOrigins.push(`https://${process.env.VERCEL_URL}`);
 }
 
-
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests) or from our list
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -93,18 +91,25 @@ app.patch('/api/applicants/:id/status', authenticateToken, async (req, res) => {
         const { status, interviewDetails } = req.body;
         const adminEmail = req.user.email;
         const applicantRef = db.collection('applicants').doc(id);
+
         const applicantDocBeforeUpdate = await applicantRef.get();
         if (!applicantDocBeforeUpdate.exists) {
             return res.status(404).json({ error: 'Applicant not found' });
         }
         const applicantDataForLog = applicantDocBeforeUpdate.data();
+
+        // 1. Database Update
         const updateData = { status, statusUpdatedAt: admin.firestore.FieldValue.serverTimestamp() };
         if (status === 'interview_scheduled' && interviewDetails) {
             updateData.interview = interviewDetails;
         }
         await applicantRef.update(updateData);
+        
+        // 2. Re-fetch data for email
         const updatedApplicantDoc = await applicantRef.get();
         const applicantData = updatedApplicantDoc.data();
+
+        // 3. Activity Log
         let logAction = '';
         if (status === 'approved') logAction = 'Approved';
         if (status === 'rejected') logAction = 'Rejected';
@@ -112,6 +117,8 @@ app.patch('/api/applicants/:id/status', authenticateToken, async (req, res) => {
         if (logAction) {
             await db.collection('activityLogs').add({ action: logAction, applicantName: applicantDataForLog.name, timestamp: admin.firestore.FieldValue.serverTimestamp(), performedBy: adminEmail });
         }
+
+        // 4. Send Email to Applicant
         if (status === 'approved') {
             await sendEmail({
                 to: applicantData.email,
@@ -131,9 +138,11 @@ app.patch('/api/applicants/:id/status', authenticateToken, async (req, res) => {
                 html: `<p>Hi ${applicantData.name},</p><p>We're excited to let you know that your application for the <strong>${applicantData.position}</strong> position stood out to us!</p><p>We have scheduled an interview for you:</p><ul><li><strong>When:</strong> ${applicantData.interview.date} at ${applicantData.interview.time}</li><li><strong>Where:</strong> ${applicantData.interview.venue}</li></ul><p>Please reply to this email to confirm if this time works for you.</p><p>We look forward to speaking with you!</p><p>Warm regards,<br>The Lifewood Recruitment Team</p>`
             });
         }
+        
         res.status(200).json({ message: 'Status updated and processed successfully' });
+
     } catch (error) {
-        console.error('❌ FATAL ERROR in PATCH /api/applicants/:id/status:', error);
+        console.error(`❌ FATAL ERROR in PATCH /api/applicants/:id/status for status "${req.body.status}":`, error);
         res.status(500).json({ error: 'Server Error: Could not update applicant status.' });
     }
 });
