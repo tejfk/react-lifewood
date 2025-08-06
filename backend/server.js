@@ -25,18 +25,25 @@ const db = admin.firestore();
 const app = express();
 
 
-// --- Production-Ready CORS Configuration ---
-// IMPORTANT: Replace 'your-project-name.vercel.app' with your actual Vercel URL after deployment.
+// --- Production-Ready and Dynamic CORS Configuration ---
 const allowedOrigins = [
-  'http://localhost:5173',
-  'https://your-project-name.vercel.app' 
+  'http://localhost:5173', // Your local dev environment
+  'https://react-lifewood.vercel.app' // IMPORTANT: REPLACE with your main Vercel production URL
 ];
+
+// When deployed on Vercel, the VERCEL_URL variable is automatically available for preview deployments.
+if (process.env.VERCEL_URL) {
+  allowedOrigins.push(`https://${process.env.VERCEL_URL}`);
+}
+
 
 const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    // Allow requests with no origin (like mobile apps or curl requests) or from our list
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.error(`CORS Error: Origin ${origin} not allowed.`);
       callback(new Error('Not allowed by CORS'));
     }
   }
@@ -106,11 +113,23 @@ app.patch('/api/applicants/:id/status', authenticateToken, async (req, res) => {
             await db.collection('activityLogs').add({ action: logAction, applicantName: applicantDataForLog.name, timestamp: admin.firestore.FieldValue.serverTimestamp(), performedBy: adminEmail });
         }
         if (status === 'approved') {
-            await sendEmail({ to: applicantData.email, subject: 'Your Lifewood Application Has Been Approved', html: `<p>Dear ${applicantData.name}, congratulations!...</p>` });
+            await sendEmail({
+                to: applicantData.email,
+                subject: 'Your Lifewood Application Has Been Approved',
+                html: `<p>Dear ${applicantData.name},</p><p>Congratulations! Your application for the ${applicantData.position} role at Lifewood has been approved to move to the next stage.</p><p>You will receive a follow-up email with your interview schedule shortly.</p><p>Best regards,<br/>The Lifewood Recruitment Team</p>`
+            });
         } else if (status === 'rejected') {
-            await sendEmail({ to: applicantData.email, subject: 'Update on Your Lifewood Application', html: `<p>Dear ${applicantData.name}, thank you for your interest...</p>` });
+            await sendEmail({
+                to: applicantData.email,
+                subject: 'Update on Your Lifewood Application',
+                html: `<p>Dear ${applicantData.name},</p><p>Thank you for your interest in the ${applicantData.position} role at Lifewood. After careful review, we regret to inform you that we will not be moving forward with your application at this time.</p><p>We wish you the best in your job search.</p><p>Sincerely,<br/>The Lifewood Recruitment Team</p>`
+            });
         } else if (status === 'interview_scheduled' && applicantData.interview) {
-            await sendEmail({ to: applicantData.email, subject: "We'd like to meet you! Interview at Lifewood", html: `<p>Hi ${applicantData.name}, we've scheduled an interview...</p>` });
+            await sendEmail({
+                to: applicantData.email,
+                subject: "We'd like to meet you! Interview at Lifewood",
+                html: `<p>Hi ${applicantData.name},</p><p>We're excited to let you know that your application for the <strong>${applicantData.position}</strong> position stood out to us!</p><p>We have scheduled an interview for you:</p><ul><li><strong>When:</strong> ${applicantData.interview.date} at ${applicantData.interview.time}</li><li><strong>Where:</strong> ${applicantData.interview.venue}</li></ul><p>Please reply to this email to confirm if this time works for you.</p><p>We look forward to speaking with you!</p><p>Warm regards,<br>The Lifewood Recruitment Team</p>`
+            });
         }
         res.status(200).json({ message: 'Status updated and processed successfully' });
     } catch (error) {
@@ -127,7 +146,6 @@ app.post('/api/gemini-chat', async (req, res) => {
     if (!userMessage) return res.status(400).json({ error: "Message is required" });
     if (!GEMINI_API_KEY) return res.status(500).json({ error: "Server error: AI key not configured." });
 
-    // --- THE FULL "LIA 3.0" PROMPT ---
     const systemPrompt = `You are "Lia," the official AI assistant for Lifewood Data Technology.
 
 ### Your Vibe:
@@ -202,9 +220,13 @@ app.post('/api/contact', (req, res) => {
     res.status(200).json({ success: true, message: "Message received." });
     const processContactForm = async () => {
         try {
-            const adminRecipient = process.env.ADMIN_EMAIL_RECIENT;
+            const adminRecipient = process.env.ADMIN_EMAIL_RECIPIENT;
             if (adminRecipient) {
-                await sendEmail({ to: adminRecipient, subject: `New Lifewood Contact: ${reason}`, html: `<p>Name: ${name}...</p>` });
+                await sendEmail({ 
+                    to: adminRecipient, 
+                    subject: `New Lifewood Contact: ${reason}`, 
+                    html: `<p><strong>Name:</strong> ${name}</p><p><strong>Email:</strong> ${email}</p><p><strong>Reason:</strong> ${reason}</p><p><strong>Message:</strong> ${message}</p>` 
+                });
             }
             await db.collection('contacts').add({ name, email, reason, message, timestamp: admin.firestore.FieldValue.serverTimestamp() });
         } catch (error) {
@@ -214,10 +236,11 @@ app.post('/api/contact', (req, res) => {
     processContactForm();
 });
 
-// --- Start the Server ---
+// --- Start the Server for local development ---
 if (process.env.NODE_ENV !== 'production') {
     const PORT = process.env.PORT || 5001;
     app.listen(PORT, () => console.log(`✅ Backend server running on http://localhost:${PORT}`));
 }
 
+// Export the app for Vercel's serverless environment
 module.exports = app;
