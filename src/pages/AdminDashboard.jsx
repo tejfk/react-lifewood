@@ -20,19 +20,21 @@ const AdminDashboard = () => {
     const fetchAllApplicants = useCallback(async () => {
         if (!currentUser) return;
         setLoading(true);
+        setError(''); // Reset error on new fetch
         try {
             const token = await currentUser.getIdToken();
-            const response = await fetch('/api/applicants', { // UPDATED FOR VERCEL
+            // --- THE FIX ---
+            const response = await fetch('/api/applicants', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            if (!response.ok) throw new Error('Failed to fetch data');
+            if (!response.ok) throw new Error('Failed to fetch applicant data');
             const data = await response.json();
             setAllApplicants(data);
             const pending = data.filter(app => app.status === 'pending');
             setPendingApplicants(pending);
         } catch (err) {
             setError(err.message);
-            toast.error("Failed to load initial applicants.");
+            toast.error("Could not load applicants.");
         } finally {
             setLoading(false);
         }
@@ -48,19 +50,17 @@ const AdminDashboard = () => {
             const body = { status };
             if (interviewDetails) body.interviewDetails = interviewDetails;
             
-            const response = await fetch(`/api/applicants/${id}/status`, { // UPDATED FOR VERCEL
+            // --- THE FIX ---
+            const response = await fetch(`/api/applicants/${id}/status`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify(body)
             });
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: 'Failed to update status on the server.' }));
-                throw new Error(errorData.error);
-            }
+            if (!response.ok) throw new Error('Failed to update status on the server.');
             
             toast.success(`Applicant status updated successfully.`);
-            setPendingApplicants(prevApplicants => prevApplicants.filter(app => app.id !== id));
+            setPendingApplicants(prev => prev.filter(app => app.id !== id));
             fetchAllApplicants();
         } catch (err) {
             toast.error(err.message);

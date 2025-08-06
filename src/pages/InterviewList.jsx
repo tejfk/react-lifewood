@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 const InterviewList = () => {
@@ -12,9 +11,10 @@ const InterviewList = () => {
     const fetchInterviews = useCallback(async () => {
         if (!currentUser) return;
         setLoading(true);
+        setError(''); // Reset error on new fetch
         try {
             const token = await currentUser.getIdToken();
-            // --- ENSURE THIS PATH IS CORRECT ---
+            // --- THE FIX ---
             const response = await fetch('/api/applicants', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
